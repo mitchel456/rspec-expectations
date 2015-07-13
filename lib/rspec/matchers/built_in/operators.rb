@@ -8,6 +8,7 @@ module RSpec
       # Not intended to be instantiated directly.
       # Only available for use with `should`.
       class OperatorMatcher
+        attr_reader :expected, :actual
         class << self
           # @private
           def registry
@@ -68,7 +69,7 @@ module RSpec
 
         # @private
         def fail_with_message(message)
-          RSpec::Expectations.fail_with(message, @expected, @actual)
+          RSpec::Expectations.fail_with(message, self)
         end
 
         # @api private

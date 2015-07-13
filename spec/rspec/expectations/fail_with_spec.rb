@@ -3,6 +3,7 @@
 RSpec.describe RSpec::Expectations, "#fail_with" do
   let(:differ) { double("differ") }
 
+  let(:matcher) { double("matcher", :expected => nil, :actual => nil) }
   before(:example) do
     allow(RSpec::Matchers.configuration).to receive_messages(:color? => false)
     allow(RSpec::Expectations).to receive(:differ) { differ }
@@ -12,7 +13,7 @@ RSpec.describe RSpec::Expectations, "#fail_with" do
     expect(differ).to receive(:diff).and_return("diff text")
 
     expect {
-      RSpec::Expectations.fail_with "message", "abc", "def"
+      RSpec::Expectations.fail_with "message", matcher
     }.to fail_with("message\nDiff:diff text")
   end
 
@@ -20,7 +21,7 @@ RSpec.describe RSpec::Expectations, "#fail_with" do
     expect(differ).to receive(:diff).and_return("")
 
     expect {
-      RSpec::Expectations.fail_with "message", "abc", "def"
+      RSpec::Expectations.fail_with "message", matcher
     }.to fail_with("message")
   end
 
@@ -34,40 +35,40 @@ RSpec.describe RSpec::Expectations, "#fail_with" do
 end
 
 RSpec.describe RSpec::Expectations, "#fail_with with matchers" do
+  let(:expected) { [a_string_matching(/foo/), a_string_matching(/bar/)] }
+  let(:actual) { ["poo", "car"] }
+  let(:matcher) { double("matcher", :expected => expected, :actual => actual) }
   before do
     allow(RSpec::Matchers.configuration).to receive_messages(:color? => false)
   end
 
   it "uses matcher descriptions in place of matchers in diffs" do
-    expected = [a_string_matching(/foo/), a_string_matching(/bar/)]
-    actual = ["poo", "car"]
-
     expected_diff = dedent(<<-EOS)
       |
       |@@ -1,2 +1,2 @@
-      |-["poo", "car"]
-      |+[(a string matching /foo/), (a string matching /bar/)]
+      |-[(a string matching /foo/), (a string matching /bar/)]
+      |+["poo", "car"]
       |
     EOS
 
     expect {
-      RSpec::Expectations.fail_with "message", actual, expected
+      RSpec::Expectations.fail_with "message", matcher
     }.to fail_with("message\nDiff:#{expected_diff}")
   end
 end
 
 RSpec.describe RSpec::Expectations, "#fail_with with --color" do
+  let(:expected) { "foo bar baz\n" }
+  let(:actual) { "foo bang baz\n" }
+  let(:matcher) { double("matcher", :expected => expected, :actual => actual) }
   before do
     allow(RSpec::Matchers.configuration).to receive_messages(:color? => true)
   end
 
   it "tells the differ to use color" do
-    expected = "foo bar baz\n"
-    actual = "foo bang baz\n"
-    expected_diff = "\e[0m\n\e[0m\e[34m@@ -1,2 +1,2 @@\n\e[0m\e[31m-foo bang baz\n\e[0m\e[32m+foo bar baz\n\e[0m"
-
+    expected_diff = "\e[0m\n\e[0m\e[34m@@ -1,2 +1,2 @@\n\e[0m\e[31m-foo bar baz\n\e[0m\e[32m+foo bang baz\n\e[0m"
     expect {
-      RSpec::Expectations.fail_with "message", actual, expected
+      RSpec::Expectations.fail_with "message", matcher
     }.to fail_with("message\nDiff:#{expected_diff}")
   end
 end
